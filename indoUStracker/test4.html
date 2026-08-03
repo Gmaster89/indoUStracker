@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Testing Moneycontrol API Symbols</h1>
+    <div id="out"></div>
+    <script>
+        async function test() {
+            let out = document.getElementById('out');
+            const symbols = [
+                'TCS', 'INFY', 'HCLTECH', 'TITAN', 'RELIANCE', 'HDFCBANK', 'ICICIBANK',
+                'BHARTIARTL', 'LT', 'TATAMOTORS', 'WIPRO', 'LTIM', 'SUNPHARMA', 'CIPLA',
+                'ASIANPAINT', 'MARUTI', 'NTPC', 'ONGC', 'SBIN', 'KOTAKBANK', 'AXISBANK',
+                'LUPIN', 'CRISIL', 'TECHM', 'BAJAJFINSV'
+            ];
+            
+            let results = [];
+            for (let sym of symbols) {
+                try {
+                    const res = await fetch(`https://priceapi.moneycontrol.com/pricefeed/nse/equitycash/${sym}`);
+                    const data = await res.json();
+                    if (data.code === "200") {
+                        results.push(`${sym}: OK (${data.data.pricecurrent})`);
+                    } else {
+                        results.push(`${sym}: FAILED (code ${data.code})`);
+                    }
+                } catch (e) {
+                    results.push(`${sym}: ERROR ${e.message}`);
+                }
+            }
+            out.innerText = results.join('\n');
+        }
+        test();
+    </script>
+</body>
+</html>

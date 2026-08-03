@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Testing Moneycontrol API</h1>
+    <div id="out"></div>
+    <script>
+        async function test() {
+            let out = document.getElementById('out');
+            try {
+                const res = await fetch('https://priceapi.moneycontrol.com/pricefeed/nse/equitycash/TCS');
+                const data = await res.json();
+                out.innerText = JSON.stringify(data);
+            } catch (e) {
+                out.innerText = "Error: " + e.message;
+            }
+        }
+        test();
+    </script>
+</body>
+</html>

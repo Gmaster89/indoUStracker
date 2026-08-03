@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Testing APIs</h1>
+    <div id="out"></div>
+    <script>
+        async function test() {
+            let out = document.getElementById('out');
+            try {
+                const targetUrl = encodeURIComponent('https://query1.finance.yahoo.com/v7/finance/quote?symbols=RELIANCE.NS');
+                const res = await fetch(`https://api.allorigins.win/get?url=${targetUrl}`);
+                const data = await res.json();
+                out.innerText = JSON.stringify(data);
+            } catch (e) {
+                out.innerText = "Error: " + e.message;
+            }
+        }
+        test();
+    </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>India Strategy Analyzer - Live Market Data</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #1c1917 0%, #7c2d12 100%); 
+            padding: 25px; 
+            color: #1c1917; 
+            min-height: 100vh; 
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            border-radius: 20px; 
+            padding: 40px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); 
+        }
+        .header-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #f3f4f6; 
+            padding-bottom: 20px; 
+            margin-bottom: 25px; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+        }
+        .header-title h1 { font-size: 2.2em; color: #7c2d12; display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -0.5px;}
+        .header-title p { color: #78716c; font-size: 1.05em; margin-top: 6px; font-weight: 500; }
+        .nav-button { 
+            background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%); 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 0.95em; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2);
+        }
+        .nav-button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(30, 58, 138, 0.3); 
+        }
+        .status-badge { display: inline-flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.9em; }
+        .status-dot { width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .control-panel { background: linear-gradient(145deg, #fff7ed, #ffedd5); border: 1px solid #fdba74; border-radius: 12px; padding: 25px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5); }
+        .control-info { color: #44403c; font-size: 1em; }
+        .btn-run { background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); color: white; border: none; padding: 14px 32px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 1.05em; transition: all 0.2s ease; box-shadow: 0 6px 16px rgba(234, 88, 12, 0.3); }
+        .btn-run:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(234, 88, 12, 0.4); }
+        .btn-run:disabled { opacity: 0.7; cursor: wait; transform: none; box-shadow: none; }
+        
+        .progress-container { width: 100%; margin-top: 15px; background-color: #fed7aa; border-radius: 8px; overflow: hidden; display: none; }
+        .progress-container.active { display: block; }
+        .progress-bar { height: 8px; background: linear-gradient(90deg, #ea580c, #f97316); width: 0%; transition: width 0.3s ease; }
+        .progress-text { font-size: 0.85em; color: #9a3412; font-weight: 600; margin-top: 5px; text-align: right; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; margin-top: 20px; }
+        .card { background: #ffffff; border: 1px solid #e7e5e4; border-radius: 16px; padding: 25px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; border-left: 6px solid #ea580c; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .card:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border-color: #fdba74; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .symbol { font-size: 1.6em; font-weight: 800; color: #1c1917; letter-spacing: -0.5px; }
+        .company-name { font-size: 0.9em; color: #78716c; font-weight: 500; margin-top: 2px; }
+        .rec-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .rec-strong-buy { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #15803d; border: 1px solid #86efac; }
+        .rec-accumulate { background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%); color: #a16207; border: 1px solid #fde047; }
+        
+        .metrics-row { display: flex; justify-content: space-between; background: #fafaf9; padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #f5f5f4; }
+        .metric-item { text-align: center; flex: 1; border-right: 1px solid #e7e5e4; }
+        .metric-item:last-child { border-right: none; }
+        .metric-label { font-size: 0.75em; color: #78716c; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .metric-value { font-size: 1.25em; font-weight: 800; color: #1c1917; margin-top: 4px; }
+        
+        .thesis-box { background: #fff7ed; border-left: 4px solid #ea580c; padding: 12px 15px; border-radius: 6px 12px 12px 6px; font-size: 0.9em; color: #9a3412; line-height: 1.5; margin: 15px 0; font-weight: 500; }
+        
+        .etf-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e7e5e4; }
+        .etf-title { font-size: 0.8em; font-weight: 700; color: #57534e; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .etf-badge { display: inline-block; background: #ffedd5; color: #9a3412; padding: 5px 10px; border-radius: 8px; font-size: 0.8em; font-weight: 600; margin-right: 6px; margin-bottom: 6px; border: 1px solid #fed7aa; transition: all 0.2s; }
+        .etf-badge:hover { background: #fed7aa; transform: translateY(-1px); }
+        
+        .error-message { background: #fee2e2; color: #991b1b; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: 500; border-left: 5px solid #b91c1c; line-height: 1.5; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.1); }
+        
+        /* Skeleton Loading */
+        .skeleton { background: #f3f4f6; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 4px; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .skel-text { height: 20px; margin-bottom: 10px; width: 100%; }
+        .skel-text.short { width: 50%; }
+        .skel-badge { height: 25px; width: 80px; border-radius: 20px; }
+        .skel-box { height: 60px; width: 100%; border-radius: 8px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const API_KEY = 'd9o3n2hr01qqbd5sqje0d9o3n2hr01qqbd5sqjeg';
+
+        // Sleep function for rate limiting
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        function IndiaInvestmentAnalyzer() {
+            const [results, setResults] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [progress, setProgress] = useState(0);
+            const [errorMsg, setErrorMsg] = useState('');
+
+            const indiaStockUniverse = [
+                { sym: 'TCS.NS', name: 'Tata Consultancy Services', thesis: 'Market leader trading at P/E discount during IT sector reset. Generates high cash flows with 4%+ dividend yield while awaiting recovery.', etfs: ['NIFTYIT', 'NIFTYBEES'] },
+                { sym: 'INFY.NS', name: 'Infosys Ltd', thesis: 'Deep valuation discount following cloud/AI migration capitulation. High margin expansion catalysts.', etfs: ['NIFTYIT', 'INDA'] },
+                { sym: 'HCLTECH.NS', name: 'HCL Technologies', thesis: 'Industry-leading ER&D engineering services growth combined with high dividend yield floor.', etfs: ['NIFTYIT', 'INDA'] },
+                { sym: 'TITAN.NS', name: 'Titan Company', thesis: 'Unrivaled consumer brand dominance in Indian jewelry, watches, and eyewear compounding.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'RELIANCE.NS', name: 'Reliance Industries', thesis: 'Conglomerate play combining Jio monetisation, retail dominance, and new green energy capex.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'HDFCBANK.NS', name: 'HDFC Bank Ltd', thesis: 'India banking sector bedrock. Post-merger balance sheet consolidation creating long-term credit expansion entry window.', etfs: ['BANKBEES', 'NIFTYBEES'] },
+                { sym: 'ICICIBANK.NS', name: 'ICICI Bank Ltd', thesis: 'Best-in-class asset quality, expanding net interest margins, and retail credit expansion across metro and tier-2 markets.', etfs: ['BANKBEES', 'INDA'] },
+                { sym: 'BHARTIARTL.NS', name: 'Bharti Airtel Ltd', thesis: 'Telecom duopoly market structure enabling sustainable ARPU growth and free cash flow generation.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'LT.NS', name: 'Larsen & Toubro', thesis: 'Proxy for India national infrastructure capex supercycle with multi-year order book visibility.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'TATAMOTORS.NS', name: 'Tata Motors Ltd', thesis: 'JLR electrification recovery combined with India commercial vehicle and passenger EV market leadership.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'WIPRO.NS', name: 'Wipro Ltd', thesis: 'Contrarian value turnaround play trading at deep sector valuation discount with large enterprise AI integration pipeline.', etfs: ['NIFTYIT'] },
+                { sym: 'LTIM.NS', name: 'LTIMindtree Ltd', thesis: 'High-margin mid-to-large tier IT integration play capturing agile cloud transformation deals.', etfs: ['NIFTYIT'] },
+                { sym: 'SUNPHARMA.NS', name: 'Sun Pharmaceutical', thesis: 'Largest generic pharma exporter capturing US/EU market share gains with cost advantages.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'CIPLA.NS', name: 'Cipla Ltd', thesis: 'Respiratory therapy leader and emerging market pharma distribution with strong brand equity.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'ASIANPAINT.NS', name: 'Asian Paints', thesis: 'Paint industry monopoly with brand moat across residential and commercial construction segments.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'MARUTI.NS', name: 'Maruti Suzuki', thesis: 'India auto market leader with domestic EV manufacturing scale and export growth catalysts.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'NTPC.NS', name: 'NTPC Limited', thesis: 'India power generation incumbent transitioning to renewable energy and green hydrogen.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'ONGC.NS', name: 'Oil & Natural Gas Corp', thesis: 'India energy security play with renewable energy diversification and dividend yield generation.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'SBIN.NS', name: 'State Bank of India', thesis: 'India largest bank with credit expansion opportunity and asset quality improvement trajectory.', etfs: ['BANKBEES', 'NIFTYBEES'] },
+                { sym: 'KOTAKBANK.NS', name: 'Kotak Mahindra Bank', thesis: 'Private banking excellence with retail deposits expansion and unsecured lending moat.', etfs: ['BANKBEES', 'NIFTYBEES'] },
+                { sym: 'AXISBANK.NS', name: 'Axis Bank', thesis: 'Aggressive retail lending growth in tier-2 cities with margin expansion opportunities.', etfs: ['BANKBEES', 'INDA'] },
+                { sym: 'LUPIN.NS', name: 'Lupin Ltd', thesis: 'Specialty pharma and oncology drugs export leadership to global regulated markets.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'CRISIL.NS', name: 'CRISIL Limited', thesis: 'Credit rating agency and market data provider with duopoly pricing power dynamics.', etfs: ['NIFTYBEES', 'INDA'] },
+                { sym: 'TECHM.NS', name: 'Tech Mahindra', thesis: 'Mid-tier IT services with 5G and cloud infrastructure focus amid sector consolidation.', etfs: ['NIFTYIT', 'INDA'] },
+                { sym: 'BAJAJFINSV.NS', name: 'Bajaj Finserv', thesis: 'Diversified financial services with insurance and lending arms and cross-sell synergies.', etfs: ['NIFTYBEES', 'INDA'] }
+            ];
+
+            const runAnalysis = async () => {
+                setLoading(true);
+                setErrorMsg('');
+                setProgress(10);
+                let liveResults = [];
+
+                try {
+                    // Start progress bar animation
+                    const progressInterval = setInterval(() => {
+                        setProgress(p => (p < 85 ? p + 5 : p));
+                    }, 500);
+
+                    const symbolList = indiaStockUniverse.map(s => s.sym).join(',');
+                    
+                    // Fallback to local server if not on Netlify
+                    const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' 
+                        ? 'http://localhost:9000/.netlify/functions/yahoo?symbols=' + symbolList
+                        : '/.netlify/functions/yahoo?symbols=' + symbolList;
+
+                    const response = await fetch(apiUrl);
+                    
+                    clearInterval(progressInterval);
+                    setProgress(90);
+
+                    if (!response.ok) {
+                        throw new Error(`Serverless Function Error (${response.status}). Ensure the 'netlify/functions/yahoo.js' folder structure is deployed or run locally via 'netlify dev'.`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.quoteResponse || !data.quoteResponse.result) {
+                        throw new Error("Invalid response format received from market provider.");
+                    }
+
+                    const quotes = data.quoteResponse.result;
+
+                    for (let stock of indiaStockUniverse) {
+                        const marketData = quotes.find(q => q.symbol === stock.sym);
+                        
+                        const price = marketData?.regularMarketPrice ? marketData.regularMarketPrice.toFixed(2) : 'N/A';
+                        const pe = marketData?.trailingPE ? marketData.trailingPE.toFixed(2) : 'N/A';
+                        const eps = marketData?.epsTrailingTwelveMonths ? marketData.epsTrailingTwelveMonths.toFixed(2) : 'N/A';
+                        
+                        let recommendation = 'ACCUMULATE';
+                        if (pe !== 'N/A' && parseFloat(pe) > 0 && parseFloat(pe) < 28) {
+                            recommendation = 'STRONG BUY';
+                        }
+
+                        liveResults.push({
+                            symbol: stock.sym,
+                            name: stock.name,
+                            thesis: stock.thesis,
+                            price,
+                            pe,
+                            roe: eps, // Reusing roe property name for the UI, but it's EPS for India
+                            etfs: stock.etfs,
+                            recommendation
+                        });
+                    }
+                    
+                    setResults(liveResults);
+                    setProgress(100);
+                } catch (error) {
+                    console.error(error);
+                    setErrorMsg(error.message || "Unable to fetch live market metrics. Please try again.");
+                }
+                setLoading(false);
+            };
+
+            return (
+                <div className="container">
+                    <div className="header-bar">
+                        <div className="header-title">
+                            <h1>🇮🇳 India Strategy Analyzer</h1>
+                            <p>Value & Capitulation Framework (25 Strategic Targets)</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                            <a href="index.html" className="nav-button">🗽 Switch to USA Tracker</a>
+                            <div className="status-badge">
+                                <span className="status-dot"></span>
+                                Netlify Serverless Engine
+                            </div>
+                        </div>
+                    </div>
+
+                    {errorMsg && (
+                        <div className="error-message">
+                            <strong>⚠️ Pipeline Error:</strong><br/>
+                            {errorMsg}
+                        </div>
+                    )}
+
+                    <div className="control-panel">
+                        <div className="control-info">
+                            <strong>Execution Target:</strong> India Demat Account (NSE / BSE Focus)
+                            <div style={{fontSize: '0.85em', color: '#78716c', marginTop: '4px'}}>Fetching via Netlify Serverless Proxy.</div>
+                        </div>
+                        <div style={{width: '100%', maxWidth: '350px'}}>
+                            <button className="btn-run" style={{width: '100%'}} onClick={runAnalysis} disabled={loading}>
+                                {loading ? `Analyzing... ${Math.round(progress * 25 / 100)}/25 Stocks` : 'Run Deep Value India Analysis'}
+                            </button>
+                            <div className={`progress-container ${loading ? 'active' : ''}`}>
+                                <div className="progress-bar" style={{width: `${progress}%`}}></div>
+                                <div className="progress-text">{progress}% Complete</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Show Skeleton Loaders during fetch */}
+                    {loading && results.length === 0 && (
+                        <div className="grid">
+                            {[1,2,3,4,5,6].map(i => (
+                                <div className="card" key={`skel-${i}`}>
+                                    <div className="card-header">
+                                        <div>
+                                            <div className="skeleton skel-text" style={{width: '100px', height: '28px'}}></div>
+                                            <div className="skeleton skel-text" style={{width: '150px'}}></div>
+                                        </div>
+                                        <div className="skeleton skel-badge"></div>
+                                    </div>
+                                    <div className="skeleton skel-box"></div>
+                                    <div className="skeleton skel-box" style={{height: '80px'}}></div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Render Results - including partial results while loading */}
+                    {(results.length > 0) && (
+                        <div className="grid">
+                            {results.map((r, i) => (
+                                <div className="card" key={i}>
+                                    <div>
+                                        <div className="card-header">
+                                            <div>
+                                                <div className="symbol">{r.symbol}</div>
+                                                <div className="company-name">{r.name}</div>
+                                            </div>
+                                            <span className={`rec-badge ${r.recommendation === 'STRONG BUY' ? 'rec-strong-buy' : 'rec-accumulate'}`}>
+                                                {r.recommendation}
+                                            </span>
+                                        </div>
+
+                                        <div className="metrics-row">
+                                            <div className="metric-item">
+                                                <div className="metric-label">Price</div>
+                                                <div className="metric-value">{r.price !== 'N/A' && r.price !== 'Err' ? `₹${r.price}` : r.price}</div>
+                                            </div>
+                                            <div className="metric-item">
+                                                <div className="metric-label">P/E Ratio</div>
+                                                <div className="metric-value">{r.pe}</div>
+                                            </div>
+                                            <div className="metric-item">
+                                                <div className="metric-label">EPS</div>
+                                                <div className="metric-value">{r.roe !== 'N/A' && r.roe !== 'Err' ? `₹${r.roe}` : r.roe}</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="thesis-box">
+                                            <strong>💡 Investment Thesis:</strong> {r.thesis}
+                                        </div>
+                                    </div>
+
+                                    <div className="etf-section">
+                                        <div className="etf-title">🎯 Related ETFs (Sector Accumulation)</div>
+                                        <div>
+                                            {r.etfs.map((etf, j) => <span key={j} className="etf-badge">{etf}</span>)}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {/* Fill remaining slots with skeletons if loading */}
+                            {loading && Array.from({length: Math.max(0, 25 - results.length)}).slice(0, 3).map((_, i) => (
+                                <div className="card" key={`skel-rem-${i}`} style={{opacity: 0.6}}>
+                                    <div className="card-header">
+                                        <div>
+                                            <div className="skeleton skel-text" style={{width: '100px', height: '28px'}}></div>
+                                            <div className="skeleton skel-text" style={{width: '150px'}}></div>
+                                        </div>
+                                    </div>
+                                    <div className="skeleton skel-box"></div>
+                                    <div className="skeleton skel-box" style={{height: '80px'}}></div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        ReactDOM.render(<IndiaInvestmentAnalyzer />, document.getElementById('root'));
+    </script>
+</body>
+</html>

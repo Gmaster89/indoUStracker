@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced USA Strategy Analyzer - Live API & ETFs</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); 
+            padding: 25px; 
+            color: #1e293b; 
+            min-height: 100vh; 
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            border-radius: 20px; 
+            padding: 40px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); 
+        }
+        .header-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #e2e8f0; 
+            padding-bottom: 20px; 
+            margin-bottom: 25px; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+        }
+        .header-title h1 { font-size: 2.2em; color: #0f172a; display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -0.5px;}
+        .header-title p { color: #64748b; font-size: 1.05em; margin-top: 6px; font-weight: 500; }
+        .nav-button { 
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 0.95em; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 6px rgba(234, 88, 12, 0.2);
+        }
+        .nav-button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(234, 88, 12, 0.3); 
+        }
+        .status-badge { display: inline-flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.9em; }
+        .status-dot { width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .control-panel { background: linear-gradient(145deg, #f8fafc, #f1f5f9); border: 1px solid #cbd5e1; border-radius: 12px; padding: 25px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5); }
+        .control-info { color: #334155; font-size: 1em; }
+        .btn-run { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; padding: 14px 32px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 1.05em; transition: all 0.2s ease; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3); }
+        .btn-run:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4); }
+        .btn-run:disabled { opacity: 0.7; cursor: wait; transform: none; box-shadow: none; }
+        
+        .progress-container { width: 100%; margin-top: 15px; background-color: #bfdbfe; border-radius: 8px; overflow: hidden; display: none; }
+        .progress-container.active { display: block; }
+        .progress-bar { height: 8px; background: linear-gradient(90deg, #2563eb, #3b82f6); width: 0%; transition: width 0.3s ease; }
+        .progress-text { font-size: 0.85em; color: #1e3a8a; font-weight: 600; margin-top: 5px; text-align: right; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; margin-top: 20px; }
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; border-left: 6px solid #2563eb; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .card:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border-color: #93c5fd; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .symbol { font-size: 1.6em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+        .company-name { font-size: 0.9em; color: #64748b; font-weight: 500; margin-top: 2px; }
+        .rec-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .rec-strong-buy { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #15803d; border: 1px solid #86efac; }
+        .rec-accumulate { background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%); color: #a16207; border: 1px solid #fde047; }
+        .rec-reduce { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #b91c1c; border: 1px solid #fca5a5; }
+        
+        .metrics-row { display: flex; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #f1f5f9; }
+        .metric-item { text-align: center; flex: 1; border-right: 1px solid #e2e8f0; }
+        .metric-item:last-child { border-right: none; }
+        .metric-label { font-size: 0.75em; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .metric-value { font-size: 1.25em; font-weight: 800; color: #0f172a; margin-top: 4px; }
+        
+        .thesis-box { background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 12px 15px; border-radius: 6px 12px 12px 6px; font-size: 0.9em; color: #0369a1; line-height: 1.5; margin: 15px 0; font-weight: 500; }
+        
+        .etf-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e2e8f0; }
+        .etf-title { font-size: 0.8em; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .etf-badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 5px 10px; border-radius: 8px; font-size: 0.8em; font-weight: 600; margin-right: 6px; margin-bottom: 6px; border: 1px solid #c7d2fe; transition: all 0.2s; }
+        .etf-badge:hover { background: #c7d2fe; transform: translateY(-1px); }
+        
+        .error-message { background: #fee2e2; color: #991b1b; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: 500; border-left: 5px solid #b91c1c; line-height: 1.5; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.1); }
+        
+        /* Skeleton Loading */
+        .skeleton { background: #f3f4f6; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 4px; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .skel-text { height: 20px; margin-bottom: 10px; width: 100%; }
+        .skel-text.short { width: 50%; }
+        .skel-badge { height: 25px; width: 80px; border-radius: 20px; }
+        .skel-box { height: 60px; width: 100%; border-radius: 8px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        const API_KEY = 'd9o3n2hr01qqbd5sqje0d9o3n2hr01qqbd5sqjeg';
+        
+        // Sleep function for rate limiting
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        function EnhancedUSAAnalyzer() {
+            const [results, setResults] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [progress, setProgress] = useState(0);
+            const [errorMsg, setErrorMsg] = useState('');
+
+            const usaStockUniverse = [
+                { sym: 'MSFT', name: 'Microsoft Corp', thesis: 'Enterprise AI infrastructure monopoly (Azure AI, Copilot) with high profit margins and massive recurring revenue cash flows.', etfs: ['QQQ (Invesco QQQ)', 'XLK (Tech Sector)', 'SPY (S&P 500)'] },
+                { sym: 'NVDA', name: 'NVIDIA Corp', thesis: 'Compute hardware bottleneck for GenAI. Dominates data center GPU market with CUDA software moat.', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)', 'QQQ (Invesco QQQ)'] },
+                { sym: 'TSM', name: 'Taiwan Semiconductor', thesis: 'Exclusive foundry partner producing >90% of advanced sub-3nm AI chips globally (Nvidia, Apple, AMD).', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)', 'EWT (iShares Taiwan)'] },
+                { sym: 'GOOGL', name: 'Alphabet Inc', thesis: 'DeepMind AI leadership, custom TPU silicon advantage, and YouTube/Search ad cash flow compounding at attractive valuations.', etfs: ['XLC (Comm Services)', 'QQQ (Invesco QQQ)', 'SPY (S&P 500)'] },
+                { sym: 'MU', name: 'Micron Technology', thesis: 'HBM3e (High Bandwidth Memory) supplier crucial for AI data centers. Strong cyclical recovery catalyst.', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)'] },
+                { sym: 'AAPL', name: 'Apple Inc', thesis: 'Apple Intelligence rollout driving multi-year device upgrade supercycle across 2B+ active device ecosystem.', etfs: ['XLK (Tech Sector)', 'QQQ (Invesco QQQ)', 'SPY (S&P 500)'] },
+                { sym: 'AMZN', name: 'Amazon.com Inc', thesis: 'AWS re-acceleration powered by Bedrock AI demand combined with retail e-commerce margin expansion.', etfs: ['XLY (Consumer Disc)', 'QQQ (Invesco QQQ)', 'SPY (S&P 500)'] },
+                { sym: 'AVGO', name: 'Broadcom Inc', thesis: 'Custom AI ASIC processor partner for Google/Meta and networking switch hardware monopoly.', etfs: ['SMH (VanEck Semi)', 'XLK (Tech Sector)'] },
+                { sym: 'AMD', name: 'Advanced Micro Devices', thesis: 'MI300 series AI accelerators capturing data center GPU market share as secondary supplier to Nvidia.', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)'] },
+                { sym: 'META', name: 'Meta Platforms', thesis: 'Llama open-source AI ecosystem leadership converting to higher digital ad monetization efficiency.', etfs: ['XLC (Comm Services)', 'QQQ (Invesco QQQ)'] },
+                { sym: 'ASML', name: 'ASML Holding', thesis: 'Monopoly supplier of EUV lithography machines essential for manufacturing leading-edge semiconductor chips.', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)'] },
+                { sym: 'ORCL', name: 'Oracle Corp', thesis: 'OCI (Oracle Cloud Infrastructure) hyper-growth driven by training multi-nodal AI clusters.', etfs: ['XLK (Tech Sector)', 'SPY (S&P 500)'] },
+                { sym: 'QCOM', name: 'Qualcomm Inc', thesis: 'AI smartphone chip leadership (Snapdragon) and RF front-end design moat for mobile devices.', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)'] },
+                { sym: 'AMAT', name: 'Applied Materials', thesis: 'Semiconductor equipment supplier for advanced node manufacturing and cutting-edge AI chips.', etfs: ['SMH (VanEck Semi)', 'XLK (Tech Sector)'] },
+                { sym: 'LRCX', name: 'Lam Research', thesis: 'Etching equipment monopoly for chip fabrication at advanced nodes and next-gen processes.', etfs: ['SMH (VanEck Semi)', 'XLK (Tech Sector)'] },
+                { sym: 'MRVL', name: 'Marvell Technology', thesis: 'Data center interconnect silicon and 5G/6G infrastructure play with strong margins.', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)'] },
+                { sym: 'NXPI', name: 'NXP Semiconductors', thesis: 'Automotive chip supplier benefiting from EV penetration and self-driving adoption trends.', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)'] },
+                { sym: 'MCHP', name: 'Microchip Technology', thesis: 'Embedded microcontroller and analog chip dominance across IoT ecosystem globally.', etfs: ['SMH (VanEck Semi)', 'SOXX (iShares Semi)'] },
+                { sym: 'ADBE', name: 'Adobe Inc', thesis: 'Generative AI integration in Creative Cloud suite driving recurring SaaS revenue expansion.', etfs: ['XLK (Tech Sector)', 'QQQ (Invesco QQQ)'] },
+                { sym: 'CRWD', name: 'CrowdStrike', thesis: 'AI-powered endpoint security threat detection for enterprise cybersecurity workloads.', etfs: ['XLK (Tech Sector)', 'QQQ (Invesco QQQ)'] },
+                { sym: 'SHOP', name: 'Shopify Inc', thesis: 'E-commerce platform AI automation and merchant services monetization at scale.', etfs: ['XLY (Consumer Disc)', 'QQQ (Invesco QQQ)'] },
+                { sym: 'UBER', name: 'Uber Technologies', thesis: 'Autonomous vehicle AI development and rideshare/delivery network effects monetization.', etfs: ['XLY (Consumer Disc)', 'QQQ (Invesco QQQ)'] },
+                { sym: 'SNOW', name: 'Snowflake Inc', thesis: 'Cloud data warehouse platform powering enterprise AI analytics and ML workloads.', etfs: ['XLK (Tech Sector)', 'QQQ (Invesco QQQ)'] },
+                { sym: 'DDOG', name: 'Datadog Inc', thesis: 'Observability platform for AI infrastructure monitoring, optimization and debugging.', etfs: ['XLK (Tech Sector)', 'QQQ (Invesco QQQ)'] }
+            ];
+
+            const runAnalysis = async () => {
+                setLoading(true);
+                setErrorMsg('');
+                setProgress(0);
+                let liveResults = [];
+
+                try {
+                    for (let i = 0; i < usaStockUniverse.length; i++) {
+                        const stock = usaStockUniverse[i];
+                        
+                        try {
+                            const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${stock.sym}&token=${API_KEY}`);
+                            if (!quoteRes.ok) throw new Error(`API Error: ${quoteRes.status}`);
+                            const quoteData = await quoteRes.json();
+                            
+                            const metricRes = await fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${stock.sym}&metric=all&token=${API_KEY}`);
+                            if (!metricRes.ok) throw new Error(`API Error: ${metricRes.status}`);
+                            const metricData = await metricRes.json();
+
+                            // Strict data adherence: No mock fallbacks. Uses 'N/A' if missing.
+                            const price = quoteData.c ? quoteData.c.toFixed(2) : 'N/A';
+                            const pe = metricData?.metric?.peBasicExclExtraTTM ? metricData.metric.peBasicExclExtraTTM.toFixed(1) : 'N/A';
+                            const roe = metricData?.metric?.roeTTM ? metricData.metric.roeTTM.toFixed(1) : 'N/A';
+                            
+                            let recommendation = 'ACCUMULATE';
+                            if (pe !== 'N/A' && parseFloat(pe) > 0 && parseFloat(pe) < 35 && roe !== 'N/A' && parseFloat(roe) > 20) {
+                                recommendation = 'STRONG BUY';
+                            }
+                            if (pe !== 'N/A' && parseFloat(pe) > 55) recommendation = 'REDUCE';
+
+                            liveResults.push({
+                                symbol: stock.sym,
+                                name: stock.name,
+                                thesis: stock.thesis,
+                                price,
+                                pe,
+                                roe,
+                                etfs: stock.etfs,
+                                recommendation
+                            });
+                        } catch (err) {
+                            console.warn(`Error fetching ${stock.sym}:`, err);
+                            // Fallback if rate limit hit or error for a single stock
+                            liveResults.push({
+                                symbol: stock.sym,
+                                name: stock.name,
+                                thesis: stock.thesis,
+                                price: 'Err',
+                                pe: 'Err',
+                                roe: 'Err',
+                                etfs: stock.etfs,
+                                recommendation: 'ACCUMULATE'
+                            });
+                        }
+
+                        setProgress(Math.round(((i + 1) / usaStockUniverse.length) * 100));
+                        
+                        // Finnhub free limit is 60 calls/min. 2 calls per stock. 
+                        // To be safe, wait 2000ms delay to avoid rate limit HTTP 429.
+                        if (i < usaStockUniverse.length - 1) {
+                            await sleep(2000); 
+                        }
+                    }
+                    setResults(liveResults);
+                } catch (error) {
+                    console.error(error);
+                    setErrorMsg(error.message || "Unable to fetch live market metrics. Please try again.");
+                }
+                setLoading(false);
+            };
+
+            return (
+                <div className="container">
+                    <div className="header-bar">
+                        <div className="header-title">
+                            <h1>🗽 Enhanced USA Strategy Analyzer</h1>
+                            <p>Aggressive Profit & Tech Infrastructure Focus (24 Strategic Targets)</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                            <a href="india.html" className="nav-button">🇮🇳 Switch to India Tracker</a>
+                            <div className="status-badge">
+                                <span className="status-dot"></span>
+                                Live Finnhub API Connected
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {errorMsg && (
+                        <div className="error-message">
+                            <strong>⚠️ Pipeline Error:</strong><br/>
+                            {errorMsg}
+                        </div>
+                    )}
+
+                    <div className="control-panel">
+                        <div className="control-info">
+                            <strong>Execution Target:</strong> USA Trading Account (Ackman / Soros / Dalio Framework)
+                            <div style={{fontSize: '0.85em', color: '#64748b', marginTop: '4px'}}>Direct API fetching enabled. Due to API limits, full analysis takes ~48 seconds.</div>
+                        </div>
+                        <div style={{width: '100%', maxWidth: '350px'}}>
+                            <button className="btn-run" style={{width: '100%'}} onClick={runAnalysis} disabled={loading}>
+                                {loading ? `Analyzing... ${Math.round(progress * 24 / 100)}/24 Stocks` : 'Run USA Analysis (24 Stocks)'}
+                            </button>
+                            <div className={`progress-container ${loading ? 'active' : ''}`}>
+                                <div className="progress-bar" style={{width: `${progress}%`}}></div>
+                                <div className="progress-text">{progress}% Complete</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Show Skeleton Loaders during fetch */}
+                    {loading && results.length === 0 && (
+                        <div className="grid">
+                            {[1,2,3,4,5,6].map(i => (
+                                <div className="card" key={`skel-${i}`}>
+                                    <div className="card-header">
+                                        <div>
+                                            <div className="skeleton skel-text" style={{width: '100px', height: '28px'}}></div>
+                                            <div className="skeleton skel-text" style={{width: '150px'}}></div>
+                                        </div>
+                                        <div className="skeleton skel-badge"></div>
+                                    </div>
+                                    <div className="skeleton skel-box"></div>
+                                    <div className="skeleton skel-box" style={{height: '80px'}}></div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Render Results - including partial results while loading */}
+                    {(results.length > 0) && (
+                        <div className="grid">
+                            {results.map((r, i) => (
+                                <div className="card" key={i}>
+                                    <div>
+                                        <div className="card-header">
+                                            <div>
+                                                <div className="symbol">{r.symbol}</div>
+                                                <div className="company-name">{r.name}</div>
+                                            </div>
+                                            <span className={`rec-badge ${r.recommendation === 'STRONG BUY' ? 'rec-strong-buy' : r.recommendation === 'REDUCE' ? 'rec-reduce' : 'rec-accumulate'}`}>
+                                                {r.recommendation}
+                                            </span>
+                                        </div>
+
+                                        <div className="metrics-row">
+                                            <div className="metric-item">
+                                                <div className="metric-label">Price</div>
+                                                <div className="metric-value">{r.price !== 'N/A' && r.price !== 'Err' ? `$${r.price}` : r.price}</div>
+                                            </div>
+                                            <div className="metric-item">
+                                                <div className="metric-label">P/E Ratio</div>
+                                                <div className="metric-value">{r.pe}</div>
+                                            </div>
+                                            <div className="metric-item">
+                                                <div className="metric-label">ROE</div>
+                                                <div className="metric-value">{r.roe !== 'N/A' && r.roe !== 'Err' ? `${r.roe}%` : r.roe}</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="thesis-box">
+                                            <strong>💡 Investment Thesis:</strong> {r.thesis}
+                                        </div>
+                                    </div>
+
+                                    <div className="etf-section">
+                                        <div className="etf-title">🎯 Related ETFs (Diversified Entry)</div>
+                                        <div>
+                                            {r.etfs.map((etf, j) => <span key={j} className="etf-badge">{etf}</span>)}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {/* Fill remaining slots with skeletons if loading */}
+                            {loading && Array.from({length: Math.max(0, 24 - results.length)}).slice(0, 3).map((_, i) => (
+                                <div className="card" key={`skel-rem-${i}`} style={{opacity: 0.6}}>
+                                    <div className="card-header">
+                                        <div>
+                                            <div className="skeleton skel-text" style={{width: '100px', height: '28px'}}></div>
+                                            <div className="skeleton skel-text" style={{width: '150px'}}></div>
+                                        </div>
+                                    </div>
+                                    <div className="skeleton skel-box"></div>
+                                    <div className="skeleton skel-box" style={{height: '80px'}}></div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        ReactDOM.render(<EnhancedUSAAnalyzer />, document.getElementById('root'));
+    </script>
+</body>
+</html>
